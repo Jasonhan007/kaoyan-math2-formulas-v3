@@ -1,0 +1,16 @@
+{
+  "name": "考研数学二公式大全",
+  "short_name": "数学二公式",
+  "description": "考研数学二公式大全：高等数学 + 线性代数，含公式、条件与易错提醒，支持搜索与收藏。",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef2f8",
+  "theme_color": "#eef2f8",
+  "icons": [
+    { "src": "assets/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
