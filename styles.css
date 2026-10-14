@@ -25,6 +25,8 @@
   --teal-soft: rgba(48, 176, 199, 0.14);
   --shadow: 0 10px 34px rgba(16, 24, 40, 0.08);
   --shadow-lg: 0 18px 50px rgba(16, 24, 40, 0.12);
+  --tabbar-glass: rgba(255, 255, 255, 0.45);
+  --tabbar-border: rgba(255, 255, 255, 0.6);
   --radius: 22px;
   --top-h: 158px;
   --sidebar-w: 236px;
@@ -52,6 +54,8 @@
   --teal-soft: rgba(48, 176, 199, 0.18);
   --shadow: 0 10px 34px rgba(0, 0, 0, 0.42);
   --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --tabbar-glass: rgba(16, 20, 28, 0.42);
+  --tabbar-border: rgba(255, 255, 255, 0.16);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -660,16 +664,16 @@ mark {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  width: min(400px, calc(100% - 28px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: min(380px, calc(100% - 32px));
   height: var(--tabbar-h);
   display: flex;
   z-index: 60;
-  background: var(--glass);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
-  border: 0.5px solid var(--card-border);
-  border-radius: 26px;
+  background: var(--tabbar-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+  border: 0.5px solid var(--tabbar-border);
+  border-radius: 999px;
   box-shadow: var(--shadow-lg);
   padding: 6px;
 }
@@ -686,7 +690,7 @@ mark {
   gap: 1px;
   font-size: 10.5px;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 999px;
   cursor: pointer;
   position: relative;
   transition: color 0.2s, background 0.25s;
