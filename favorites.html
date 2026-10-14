@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+  <title>我的收藏 · 考研数学二公式大全</title>
+  <meta name="description" content="收藏的考研数学二公式。">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="数学二公式">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/icon-180.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180"
+        href="https://jasonhan007.github.io/kaoyan-math2-formulas-v3/assets/icon-180.png?v=3">
+  <meta name="theme-color" content="#eef2f8">
+  <link rel="stylesheet" href="vendor/katex.min.css">
+  <script defer src="vendor/katex.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="favorites">
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <img class="brand-icon" src="assets/icon-180.png" alt="" width="32" height="32">
+        <div>
+          <h1>我的收藏</h1>
+          <p class="sub">考研数学二公式大全</p>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-row search-row">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20.5 20.5"/></svg>
+        <input id="searchInput" type="search" placeholder="搜索收藏的公式…" autocomplete="off" spellcheck="false">
+        <button class="clear-btn" id="clearBtn" aria-label="清空" hidden>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <span class="result-chip" id="resultChip" hidden></span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="toc" id="toc" aria-label="目录"></aside>
+
+    <main class="content">
+      <div class="page-head">
+        <p class="crumb">FAVORITES</p>
+        <h2>我的收藏</h2>
+        <p class="meta" id="pageMeta"></p>
+      </div>
+
+      <div id="katexBanner" class="banner" hidden>公式渲染组件加载失败，请检查 vendor/ 目录是否完整。</div>
+
+      <div class="cards" id="cards"></div>
+
+      <div class="empty" id="emptyState" hidden>
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 20.3s-7.4-4.6-9.2-9A5.1 5.1 0 0 1 12 6.4a5.1 5.1 0 0 1 9.2 4.9c-1.8 4.4-9.2 9-9.2 9z"/></svg>
+        <p id="emptyText">还没有收藏任何公式</p>
+        <a class="ghost-btn" href="index.html">浏览公式目录</a>
+      </div>
+
+      <footer class="page-foot">
+        <p>收藏保存在本机浏览器中，换设备不会同步</p>
+      </footer>
+    </main>
+  </div>
+
+  <nav class="tabbar" aria-label="主导航">
+    <a class="tab" href="index.html">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h9"/></svg>
+      <span>目录</span>
+    </a>
+    <a class="tab active" href="favorites.html">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 20.3s-7.4-4.6-9.2-9A5.1 5.1 0 0 1 12 6.4a5.1 5.1 0 0 1 9.2 4.9c-1.8 4.4-9.2 9-9.2 9z"/></svg>
+      <span>收藏</span>
+      <em class="tab-badge" id="favBadge" hidden>0</em>
+    </a>
+  </nav>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

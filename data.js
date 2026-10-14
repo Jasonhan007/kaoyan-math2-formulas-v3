@@ -68,7 +68,9 @@ e^x&=1+x+\frac{x^2}{2!}+\cdots+\frac{x^n}{n!}+o(x^n)\\
 \sin x&=x-\frac{x^3}{3!}+\frac{x^5}{5!}-\cdots+(-1)^{k-1}\frac{x^{2k-1}}{(2k-1)!}+o(x^{2k})\\
 \cos x&=1-\frac{x^2}{2!}+\frac{x^4}{4!}-\cdots+(-1)^{k}\frac{x^{2k}}{(2k)!}+o(x^{2k+1})\\
 \ln(1+x)&=x-\frac{x^2}{2}+\frac{x^3}{3}-\cdots+(-1)^{n-1}\frac{x^n}{n}+o(x^n)\\
-(1+x)^\alpha&=1+\alpha x+\frac{\alpha(\alpha-1)}{2!}x^2+\cdots+\frac{\alpha(\alpha-1)\cdots(\alpha-n+1)}{n!}x^n+o(x^n)
+(1+x)^\alpha&=1+\alpha x+\frac{\alpha(\alpha-1)}{2!}x^2+\cdots+\frac{\alpha(\alpha-1)\cdots(\alpha-n+1)}{n!}x^n+o(x^n)\\
+\frac{1}{1-x}&=1+x+x^2+\cdots+x^n+o(x^n),\qquad \frac{1}{1+x}=1-x+x^2-\cdots+(-1)^nx^n+o(x^n)\\
+\arctan x&=x-\frac{x^3}{3}+\frac{x^5}{5}-\cdots+(-1)^{k}\frac{x^{2k+1}}{2k+1}+o(x^{2k+1})
 \end{aligned}`,
               cond: "皮亚诺余项，x→0",
               warn: "展开阶数须与分母同阶（宁多保留一阶）；等价无穷小是泰勒的最低阶特例",
@@ -111,6 +113,28 @@ e^x&=1+x+\frac{x^2}{2!}+\cdots+\frac{x^n}{n!}+o(x^n)\\
               tex: String.raw`\lim_{x\to x_0}f(x)=A\iff \text{对任意满足 }x_n\to x_0\ (x_n\neq x_0)\text{ 的数列，都有 }f(x_n)\to A`,
               warn: "证明极限不存在：找两个不同数列使函数值趋于不同结果（如 sin(1/x)）",
               kw: ["归结原则", "海涅", "数列极限"]
+            },
+            {
+              id: "ga1-10",
+              name: "极限存在准则（夹逼、单调有界）",
+              tex: String.raw`\begin{aligned}
+&\text{夹逼准则：}g(x)\le f(x)\le h(x)\ \text{且}\ \lim g(x)=\lim h(x)=A\ \Rightarrow\ \lim f(x)=A\\
+&\text{单调有界准则：}(\text{数列})\ \text{单调且有界}\ \Rightarrow\ \text{极限存在}
+\end{aligned}`,
+              cond: "夹逼需两边同极限；单调有界针对数列（递推数列 aₙ₊₁=f(aₙ) 高频）",
+              warn: "证明极限两步走：先证单调有界（归纳法+放缩），再对递推式两边取极限解方程",
+              kw: ["夹逼", "单调有界", "准则", "递推数列", "两边夹"]
+            },
+            {
+              id: "ga1-11",
+              name: "常用不等式",
+              tex: String.raw`\begin{aligned}
+&\sin x\le x\le\tan x\quad(0\le x<\pi/2),\qquad |\sin x|\le|x|\ (x\in\mathbb{R})\\
+&e^x\ge 1+x\quad(x\in\mathbb{R}),\qquad \ln x\le x-1\quad(x>0)\\
+&(1+x)^n\ge 1+nx\quad(x>-1,\ n\in\mathbb{N})
+\end{aligned}`,
+              warn: "常用于极限比较与积分不等式证明（构造辅助函数 eˣ−1−x、x−1−lnx）；等号均在 x=0 取到",
+              kw: ["不等式", "放缩", "e^x≥1+x", "伯努利"]
             }
           ]
         },
@@ -290,6 +314,14 @@ e^x&=1+x+\frac{x^2}{2!}+\cdots+\frac{x^n}{n!}+o(x^n)\\
               tex: String.raw`f'(x)=0\ \text{在 }(a,b)\text{ 内恒成立}\Rightarrow f(x)\equiv C\ (x\in(a,b))`,
               warn: "证明 f(x)≡g(x)：令 F=f−g，证 F′≡0 且在一点取 0（或直接用区间上导数为 0）",
               kw: ["推论", "常数", "恒等式"]
+            },
+            {
+              id: "ga2-20",
+              name: "反函数的二阶导数",
+              tex: String.raw`\frac{d^2x}{dy^2}=-\frac{y''(x)}{[y'(x)]^3}`,
+              cond: "y′(x)≠0，x=x(y) 为 y=y(x) 的反函数",
+              warn: "负号与三次方最易错：对 1/y′ 关于 y 再求一次导即得；也可由 dy/dx=1/(dx/dy) 两边对 y 求导推导",
+              kw: ["反函数", "二阶导", "d2x/dy2"]
             }
           ]
         },
@@ -473,6 +505,50 @@ e^x&=1+x+\frac{x^2}{2!}+\cdots+\frac{x^n}{n!}+o(x^n)\\
               cond: "f 在 [a,b] 上连续",
               warn: "与拉格朗日中值定理联用可证明积分不等式；ξ 是区间内的某点，不是任意点",
               kw: ["积分中值", "中值定理"]
+            },
+            {
+              id: "ga3-20",
+              name: "常用三角函数积分",
+              tex: String.raw`\begin{aligned}
+&\int\tan x\,dx=-\ln|\cos x|+C,\qquad \int\cot x\,dx=\ln|\sin x|+C\\
+&\int\sec x\,dx=\ln|\sec x+\tan x|+C,\qquad \int\csc x\,dx=\ln|\csc x-\cot x|+C\\
+&\int\sec^2x\,dx=\tan x+C,\qquad \int\sec x\tan x\,dx=\sec x+C
+\end{aligned}`,
+              warn: "tan、cot 结果带负号，sec、csc 原函数是 ln|…|；∫sec x 可用万能代换或 sec 乘 (sec+tan) 凑微分",
+              kw: ["tan积分", "sec积分", "csc", "cot", "三角积分"]
+            },
+            {
+              id: "ga3-21",
+              name: "降幂公式（偶次幂积分）",
+              tex: String.raw`\begin{aligned}
+&\sin^2x=\frac{1-\cos2x}{2},\qquad \cos^2x=\frac{1+\cos2x}{2}\\
+&\int\sin^2x\,dx=\frac{x}{2}-\frac{\sin2x}{4}+C,\qquad \int\cos^2x\,dx=\frac{x}{2}+\frac{\sin2x}{4}+C
+\end{aligned}`,
+              warn: "偶次三角幂先降幂再积；但 ∫₀^{π/2} sinⁿx 优先用点火公式更快",
+              kw: ["降幂", "sin²x", "cos²x", "半角"]
+            },
+            {
+              id: "ga3-22",
+              name: "含根式的积分公式",
+              tex: String.raw`\begin{aligned}
+&\int\sqrt{a^2-x^2}\,dx=\frac{x}{2}\sqrt{a^2-x^2}+\frac{a^2}{2}\arcsin\frac{x}{a}+C\\
+&\int\sqrt{x^2+a^2}\,dx=\frac{x}{2}\sqrt{x^2+a^2}+\frac{a^2}{2}\ln\left|x+\sqrt{x^2+a^2}\right|+C\\
+&\int\sqrt{x^2-a^2}\,dx=\frac{x}{2}\sqrt{x^2-a^2}-\frac{a^2}{2}\ln\left|x+\sqrt{x^2-a^2}\right|+C
+\end{aligned}`,
+              cond: "a>0；也可由三角代换现场推出",
+              warn: "三个公式结构相似：第一项都是 x√…/2，第二项是 arcsin 还是 ln、正负号要区分；弧长/旋转体题高频",
+              kw: ["根式积分", "sqrt", "圆面积", "弧长"]
+            },
+            {
+              id: "ga3-23",
+              name: "反常积分比较判别法（极限形式）",
+              tex: String.raw`\begin{aligned}
+&\text{无穷限：}\lim_{x\to+\infty}\frac{f(x)}{g(x)}=l,\ 0<l<+\infty\ \Rightarrow\ \int_1^{+\infty}f\text{ 与 }\int_1^{+\infty}g\text{ 同敛散}\\
+&\text{瑕点 }a:\ \lim_{x\to a^+}\frac{f(x)}{(x-a)^p}=l,\ 0<l<+\infty\ \Rightarrow\ \int_a^b f\text{ 与 }\int_a^b\frac{dx}{(x-a)^p}\text{ 同敛散}
+\end{aligned}`,
+              cond: "f、g 在相应区间上恒正（或最终恒正）",
+              warn: "比较对象常用 p-积分：∫₁^∞ 1/xᵖ（p>1 收敛）、∫₀¹ 1/xᵖ（p<1 收敛）；l=0 或 ∞ 时结论方向相反",
+              kw: ["比较判别法", "敛散", "极限形式", "判敛"]
             }
           ]
         },
@@ -779,6 +855,17 @@ D=|A|,\quad D_i\text{ 为把 }A\text{ 的第 }i\text{ 列换成 }b\text{ 所得�
               cond: "A、B 为 n 阶方阵",
               warn: "|A+B| ≠ |A|+|B|；|kA| = kⁿ|A| 不是 k|A|——两个最高频错误",
               kw: ["乘积行列式", "kA", "行列式公式"]
+            },
+            {
+              id: "la1-7",
+              name: "分块行列式",
+              tex: String.raw`\begin{aligned}
+&\begin{vmatrix}A&O\\C&B\end{vmatrix}=|A|\,|B|,\qquad \begin{vmatrix}A&C\\O&B\end{vmatrix}=|A|\,|B|\\
+&\begin{vmatrix}O&A\\B&O\end{vmatrix}=(-1)^{mn}|A|\,|B|
+\end{aligned}`,
+              cond: "A 为 m 阶、B 为 n 阶方阵，零块位置与分块一致",
+              warn: "对角分块、准三角分块直接乘；副对角分块别忘符号 (−1)^{mn}",
+              kw: ["分块行列式", "拉普拉斯", "准对角"]
             }
           ]
         },
@@ -1056,6 +1143,17 @@ D=|A|,\quad D_i\text{ 为把 }A\text{ 的第 }i\text{ 列换成 }b\text{ 所得�
               tex: String.raw`|\lambda E-A|=0\ \text{求特征值}\ \to\ \text{解 }(\lambda E-A)x=0\ \text{求特征向量}\ \to\ \text{重根施密特正交化}\ \to\ \text{单位化得 }Q`,
               warn: "Q 的列顺序必须与 Λ 中特征值顺序一致；检验：QᵀAQ 应为对角阵",
               kw: ["正交变换", "步骤", "Q^TAQ"]
+            },
+            {
+              id: "la5-7",
+              name: "特征多项式的展开",
+              tex: String.raw`\begin{aligned}
+&|\lambda E-A|=\lambda^n-(\operatorname{tr}A)\lambda^{n-1}+\cdots+(-1)^n|A|\\
+&n=3:\ |\lambda E-A|=\lambda^3-(\operatorname{tr}A)\lambda^2+\Big(\sum \text{二阶主子式}\Big)\lambda-|A|
+\end{aligned}`,
+              cond: "A 为 n 阶方阵；三阶时“二阶主子式和”指三个 2 阶主子式之和",
+              warn: "系数与特征值关系：λⁿ⁻¹ 系数=−迹，常数项=(−1)ⁿ|A|；已知特征值可反求迹与行列式（参数反求题常用）",
+              kw: ["特征多项式", "系数", "trA", "主子式"]
             }
           ]
         },
