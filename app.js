@@ -66,11 +66,36 @@
     return n;
   }
 
-  /* ---------- KaTeX ---------- */
+  /* ---------- KaTeX（分帧渲染，避免单次长任务卡顿） ---------- */
+  var renderQueue = [];
+  var flushScheduled = false;
+
   function renderMath(el, tex) {
     el.dataset.tex = tex;
     el._rendered = false;
-    tryRender(el);
+    if (typeof katex === "undefined") return;   // 未就绪时由 load 兜底
+    renderQueue.push(el);
+    scheduleFlush();
+  }
+  function scheduleFlush() {
+    if (flushScheduled) return;
+    flushScheduled = true;
+    requestAnimationFrame(flushQueue);
+  }
+  function flushQueue() {
+    flushScheduled = false;
+    if (typeof katex === "undefined") return;
+    var n = Math.min(4, renderQueue.length);
+    for (var i = 0; i < n; i++) {
+      var el = renderQueue.shift();
+      tryRender(el);
+      markOne(el);
+    }
+    if (renderQueue.length) scheduleFlush();
+  }
+  function markOne(f) {
+    var inner = f.firstElementChild;
+    if (inner) f.classList.toggle("ovf", inner.scrollWidth - inner.clientWidth > 4);
   }
   function tryRender(el) {
     if (el._rendered || typeof katex === "undefined") return;
@@ -86,18 +111,18 @@
     }
   }
   function renderMathReady() {
-    if (typeof katex !== "undefined") {
-      $$(".formula").forEach(tryRender);
-      $("#katexBanner") && ($("#katexBanner").hidden = true);
-      markOverflow();
+    if (typeof katex === "undefined") return;
+    while (renderQueue.length) {
+      var el = renderQueue.shift();
+      tryRender(el);
+      markOne(el);
     }
+    $$(".formula").forEach(tryRender);
+    $("#katexBanner") && ($("#katexBanner").hidden = true);
+    markOverflow();
   }
   function markOverflow() {
-    $$(".formula").forEach(function (f) {
-      var inner = f.firstElementChild;
-      if (!inner) return;
-      f.classList.toggle("ovf", inner.scrollWidth - inner.clientWidth > 4);
-    });
+    $$(".formula").forEach(markOne);
   }
 
   /* ---------- 卡片 ---------- */
