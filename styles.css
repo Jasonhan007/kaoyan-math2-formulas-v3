@@ -325,6 +325,52 @@ a { color: var(--accent); text-decoration: none; }
 
 .dir-chevron { color: var(--ink-3); flex-shrink: 0; }
 
+.dir-num.tip { background: var(--gold-soft); color: var(--gold); }
+
+/* ============ 做题技巧 ============ */
+.tip-group { margin-top: 26px; scroll-margin-top: calc(var(--top-h) + 14px); }
+
+.tip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 4px 6px;
+}
+
+.tip-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.tip-note {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2.5px 9px;
+  border-radius: 999px;
+}
+
+.tip-sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.tip-steps {
+  margin: 9px 0 0;
+  padding-left: 1.15em;
+  font-size: 13.5px;
+  line-height: 1.68;
+  color: var(--ink-2);
+}
+
+.tip-steps li { margin: 5px 0; }
+
+.tip-steps li::marker { color: var(--accent); font-weight: 700; }
+
 /* ============ 页面小标题（章节页 / 收藏页） ============ */
 .page-head { padding: 24px 4px 2px; }
 
@@ -602,7 +648,7 @@ mark {
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-  width: min(300px, calc(100% - 32px));
+  width: min(340px, calc(100% - 32px));
   height: var(--tabbar-h);
   display: flex;
   z-index: 60;

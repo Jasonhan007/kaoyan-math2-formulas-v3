@@ -31,6 +31,7 @@
     });
   }
   function highlight(text, q) {
+    text = String(text == null ? "" : text);
     if (!q) return esc(text);
     var out = "", lower = text.toLowerCase(), ql = q.toLowerCase(), i = 0;
     while (true) {
@@ -178,8 +179,8 @@
     if (opts.showSource && opts.source) {
       var a = document.createElement("a");
       a.className = "src-link";
-      a.href = "section.html?id=" + opts.source.secId + "#f-" + item.id;
-      a.textContent = "来自：" + opts.source.secTitle;
+      a.href = opts.source.href;
+      a.textContent = "来自：" + opts.source.title;
       card.appendChild(a);
     }
 
@@ -206,6 +207,82 @@
     if (page === "favorites") applyFilter();   // 收藏页：增删都即时刷新列表
   }
 
+  /* ---------- 技巧卡片 ---------- */
+  function buildTipCard(tip, idx, opts) {
+    opts = opts || {};
+    var card = document.createElement("article");
+    card.className = "card tip-card";
+    card.id = "f-" + tip.id;
+
+    var head = document.createElement("div");
+    head.className = "card-head";
+
+    var idxEl = document.createElement("span");
+    idxEl.className = "card-idx";
+    idxEl.textContent = idx;
+
+    var name = document.createElement("h4");
+    name.className = "card-name";
+    name.textContent = tip.title;
+
+    var fav = document.createElement("button");
+    fav.className = "fav-btn" + (state.favs.has(tip.id) ? " on" : "");
+    fav.type = "button";
+    fav.setAttribute("aria-label", "收藏 " + tip.title);
+    fav.setAttribute("aria-pressed", state.favs.has(tip.id) ? "true" : "false");
+    fav.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">' +
+      '<path d="M12 20.3s-7.4-4.6-9.2-9A5.1 5.1 0 0 1 12 6.4a5.1 5.1 0 0 1 9.2 4.9c-1.8 4.4-9.2 9-9.2 9z"/></svg>';
+    fav.addEventListener("click", function () { toggleFav(tip, fav); });
+
+    head.appendChild(idxEl);
+    head.appendChild(name);
+    head.appendChild(fav);
+    card.appendChild(head);
+
+    if (tip.sub) {
+      var sub = document.createElement("p");
+      sub.className = "tip-sub";
+      sub.textContent = tip.sub;
+      card.appendChild(sub);
+    }
+
+    if (tip.steps && tip.steps.length) {
+      var ol = document.createElement("ol");
+      ol.className = "tip-steps";
+      tip.steps.forEach(function (s) {
+        var li = document.createElement("li");
+        li.textContent = s;
+        ol.appendChild(li);
+      });
+      card.appendChild(ol);
+    }
+
+    if (tip.warn) {
+      var p2 = document.createElement("p");
+      p2.className = "note warn";
+      p2.innerHTML = '<span class="tag">提醒</span><span class="txt">' + esc(tip.warn) + "</span>";
+      card.appendChild(p2);
+    }
+
+    if (opts.showSource && opts.source) {
+      var a = document.createElement("a");
+      a.className = "src-link";
+      a.href = opts.source.href;
+      a.textContent = "来自：" + opts.source.title;
+      card.appendChild(a);
+    }
+
+    return {
+      el: card,
+      item: tip,
+      nameEl: name,
+      favBtn: fav,
+      hay: (tip.title + " " + (tip.sub || "") + " " + (tip.steps || []).join(" ") + " " +
+        (tip.warn || "") + " " + (tip.kw || []).join(" ") + " 做题技巧 " + (tip.group || "")).toLowerCase()
+    };
+  }
+
   function updateBadges() {
     var n = state.favs.size;
     var badge = $("#favBadge");
@@ -223,6 +300,26 @@
     var wrap = $("#directory");
     if (!wrap) return;
     var frag = document.createDocumentFragment();
+
+    // 专题：做题技巧
+    if (data.tips && data.tips.length) {
+      var gt = document.createElement("div");
+      gt.className = "dir-group";
+      var ht = document.createElement("h2");
+      ht.textContent = "专题";
+      gt.appendChild(ht);
+      var at = document.createElement("a");
+      at.className = "dir-row";
+      at.href = "tips.html";
+      at.innerHTML =
+        '<span class="dir-num tip">技</span>' +
+        '<span class="dir-main"><b>做题技巧</b><em>选择题 / 填空题 / 解答题 / 高频题型专项</em></span>' +
+        '<span class="dir-count">' + data.tips.length + " 条</span>" +
+        '<svg class="dir-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+      gt.appendChild(at);
+      frag.appendChild(gt);
+    }
+
     data.chapters.forEach(function (ch, gi) {
       var g = document.createElement("div");
       g.className = "dir-group";
@@ -296,7 +393,7 @@
         found++;
         var rec = buildCard(item, ii + 1, {
           showSource: true,
-          source: { secId: x.sec.id, secTitle: x.sec.title, chTitle: x.ch.title }
+          source: { title: x.sec.title, href: "section.html?id=" + x.sec.id + "#f-" + item.id }
         });
         rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
         delay += 45;
@@ -304,11 +401,94 @@
         box.appendChild(rec.el);
       });
     });
+
+    // 收藏里的做题技巧
+    (data.tips || []).forEach(function (tip, ii) {
+      if (!state.favs.has(tip.id)) return;
+      found++;
+      var rec = buildTipCard(tip, ii + 1, {
+        showSource: true,
+        source: { title: "做题技巧", href: "tips.html#f-" + tip.id }
+      });
+      rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
+      delay += 45;
+      cards.push(rec);
+      box.appendChild(rec.el);
+    });
+
     var meta = $("#pageMeta");
     if (meta) meta.textContent = found + " 条收藏 · 取消收藏后即时移出列表";
     if (found === 0) $("#emptyState") && ($("#emptyState").hidden = false);
     updateBadges();
     buildToc(null);
+  }
+
+  /* ---------- 做题技巧页 ---------- */
+  var TIP_GROUP_TITLE = { "选择题": "选择题技巧", "填空题": "填空题技巧", "解答题": "解答题技巧", "专项": "高频题型专项" };
+  var TIP_GROUP_NOTE = { "选择题": "10 题 × 5 分 = 50 分", "填空题": "6 题 × 5 分 = 30 分", "解答题": "6 题 ≈ 70 分", "专项": "按题型逐个击破" };
+
+  function buildTips() {
+    var box = $("#tips");
+    if (!box) return;
+    var groups = [];
+    (data.tips || []).forEach(function (t) {
+      if (groups.indexOf(t.group) < 0) groups.push(t.group);
+    });
+
+    var total = 0, delay = 0;
+    groups.forEach(function (gname, gi) {
+      var list = data.tips.filter(function (t) { return t.group === gname; });
+      var sec = document.createElement("section");
+      sec.className = "tip-group";
+      sec.id = "g-tip-" + gi;
+
+      var head = document.createElement("div");
+      head.className = "tip-head";
+      head.innerHTML = "<h2>" + esc(TIP_GROUP_TITLE[gname] || gname) + "</h2>" +
+        '<span class="tip-note">' + esc(TIP_GROUP_NOTE[gname] || "") + "</span>";
+      sec.appendChild(head);
+
+      var cardsBox = document.createElement("div");
+      cardsBox.className = "cards";
+      list.forEach(function (tip, ii) {
+        var rec = buildTipCard(tip, ii + 1, {});
+        rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
+        delay += 45;
+        total++;
+        cards.push(rec);
+        cardsBox.appendChild(rec.el);
+      });
+      sec.appendChild(cardsBox);
+      box.appendChild(sec);
+    });
+
+    var meta = $("#pageMeta");
+    if (meta) meta.textContent = total + " 条技巧 · 按题型分类，可直接搜索“排除法”“辅助函数”等";
+
+    buildTipsToc(groups);
+    updateBadges();
+  }
+
+  function buildTipsToc(groups) {
+    var toc = $("#toc");
+    if (!toc) return;
+    var frag = document.createDocumentFragment();
+    var t = document.createElement("div");
+    t.className = "toc-title";
+    t.textContent = "题型分类";
+    frag.appendChild(t);
+    groups.forEach(function (g, i) {
+      var a = document.createElement("a");
+      a.href = "#g-tip-" + i;
+      a.textContent = TIP_GROUP_TITLE[g] || g;
+      frag.appendChild(a);
+    });
+    var back = document.createElement("a");
+    back.href = "index.html";
+    back.style.marginTop = "10px";
+    back.textContent = "← 返回公式目录";
+    frag.appendChild(back);
+    toc.appendChild(frag);
   }
 
   function buildToc(activeId) {
@@ -350,7 +530,8 @@
       }
       rec.el.hidden = !ok;
       if (ok) visible++;
-      rec.nameEl.innerHTML = tokens.length ? highlight(rec.item.name, tokens[0]) : esc(rec.item.name);
+      var nm = rec.item.name || rec.item.title || "";
+      rec.nameEl.innerHTML = tokens.length ? highlight(nm, tokens[0]) : esc(nm);
     });
 
     var empty = $("#emptyState");
@@ -368,6 +549,14 @@
     }
     var cb = $("#clearBtn");
     if (cb) cb.hidden = !state.query;
+
+    // 技巧页：隐藏没有结果的分组
+    if (page === "tips") {
+      $$(".tip-group").forEach(function (g) {
+        g.hidden = !$$(".tip-card", g).some(function (c) { return !c.hidden; });
+      });
+    }
+    // 收藏页：隐藏无结果（保持分组无）
   }
 
   /* ---------- 顶栏高度 ---------- */
@@ -410,6 +599,7 @@
     bind();
     if (page === "home") buildHome();
     else if (page === "section") buildSection();
+    else if (page === "tips") buildTips();
     else if (page === "favorites") buildFavorites();
     measureTop();
     applyFilter();
