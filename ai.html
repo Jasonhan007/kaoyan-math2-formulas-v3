@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+  <title>AI 助手 · 考研数学二公式大全</title>
+  <meta name="description" content="AI 数学学习助手：公式讲解、解题步骤、智能搜索与练习题生成（考研数学二范围）。">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="数学二公式">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/icon-180.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180"
+        href="https://jasonhan007.github.io/kaoyan-math2-formulas-v3/assets/icon-180.png?v=3">
+  <meta name="theme-color" content="#eef2f8">
+  <link rel="stylesheet" href="vendor/katex.min.css">
+  <script defer src="vendor/katex.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="ai.css">
+</head>
+<body data-page="ai">
+
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <a href="index.html" aria-label="返回目录" style="display:flex;align-items:center;gap:10px;color:inherit">
+          <img class="brand-icon" src="assets/icon-180.png" alt="" width="32" height="32">
+          <div>
+            <h1>AI 数学助手</h1>
+            <p class="sub">考研数学二范围 · 返回目录</p>
+          </div>
+        </a>
+      </div>
+      <button class="icon-btn" id="settingsBtn" aria-label="设置">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></svg>
+      </button>
+    </div>
+    <nav class="topbar-row chips-row" id="modeRow" aria-label="功能选择">
+      <button class="chip active" data-mode="solve">解题助手</button>
+      <button class="chip" data-mode="explain">公式讲解</button>
+      <button class="chip" data-mode="search">智能搜索</button>
+      <button class="chip" data-mode="practice">出练习题</button>
+    </nav>
+  </header>
+
+  <main class="ai-main" id="chatLog">
+    <div class="ai-intro">
+      <p class="hero-kicker">AI · 本地优先</p>
+      <h2>有问题，直接问</h2>
+      <p class="ai-intro-desc">公式库与技巧页始终不调用模型；只有在这里主动提问或点「AI 讲解」时才请求 AI。
+        公式用 KaTeX 渲染，回答限定考研数学二范围。</p>
+      <div class="ai-examples" id="examples">
+        <button data-fill="求极限：lim(x→0) (tan x − sin x)/x³">求极限：lim(x→0)(tan x−sin x)/x³</button>
+        <button data-fill="为什么极坐标二重积分要乘 ρ？">为什么极坐标二重积分要乘 ρ？</button>
+        <button data-fill="帮我讲清楚「辅助函数构造」在证明题里怎么用">证明题的辅助函数怎么构造？</button>
+        <button data-fill="出 2 道二重积分的练习题">出 2 道二重积分练习题</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="ai-statusbar">
+    <span id="aiStatus">就绪</span>
+    <span class="ai-status-right">
+      <span class="ai-badge" id="modeBadge">解题助手</span>
+      <span class="ai-badge" id="proxyBadge" hidden>模拟</span>
+    </span>
+  </div>
+
+  <div class="ai-composer" id="composer">
+    <div class="ai-composer-inner">
+      <textarea id="aiInput" rows="1" placeholder="输入题目或问题…（⌘/Ctrl + Enter 发送）" spellcheck="false"></textarea>
+      <button class="ai-send" id="sendBtn" aria-label="发送">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12 20 4.5 14.5 20 12 13.5 4.5 12z"/></svg>
+      </button>
+      <button class="ai-stop" id="stopBtn" aria-label="停止" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="主导航">
+    <a class="tab" href="index.html">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h9"/></svg>
+      <span>目录</span>
+    </a>
+    <a class="tab" href="tips.html">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v2M12 18.5v2M4.5 12h-2M21.5 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M17.4 6.6l1.4-1.4M5.2 18.8l1.4-1.4"/><circle cx="12" cy="12" r="3.6"/></svg>
+      <span>技巧</span>
+    </a>
+    <a class="tab active" href="ai.html">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2l1.7 4.4 4.4 1.7-4.4 1.7-1.7 4.4-1.7-4.4L5.9 10.3l4.4-1.7z"/><path d="M18.4 15.6l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+      <span>AI</span>
+    </a>
+    <a class="tab" href="favorites.html">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 20.3s-7.4-4.6-9.2-9A5.1 5.1 0 0 1 12 6.4a5.1 5.1 0 0 1 9.2 4.9c-1.8 4.4-9.2 9-9.2 9z"/></svg>
+      <span>收藏</span>
+      <em class="tab-badge" id="favBadge" hidden>0</em>
+    </a>
+  </nav>
+
+  <!-- 设置弹层 -->
+  <div class="sheet-mask" id="sheetMask" hidden></div>
+  <div class="sheet" id="sheet" hidden aria-label="AI 设置">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <h3>AI 设置</h3>
+      <button class="ghost-btn" id="sheetClose">关闭</button>
+    </div>
+    <div class="sheet-body">
+      <label class="field">
+        <span>代理地址</span>
+        <input id="cfgProxy" type="url" placeholder="留空 = 同源 /api/chat；线上填 https://你的worker.workers.dev/api/chat" autocomplete="off">
+        <em>API Key 只保存在服务端；这里只填代理地址。</em>
+      </label>
+      <label class="field">
+        <span>访问口令（可选）</span>
+        <input id="cfgToken" type="text" placeholder="Worker 设置了 APP_TOKEN 时填写" autocomplete="off">
+        <em>对应请求头 x-app-token，防止他人白用你的额度。</em>
+      </label>
+      <label class="field">
+        <span>单次输出上限 max_tokens</span>
+        <input id="cfgTokens" type="number" min="200" max="1200" step="100" value="800">
+        <em>越大越贵越慢；公式讲解 600~800、解题 800~1000 足够。</em>
+      </label>
+      <div class="field-row">
+        <button class="ghost-btn" id="clearCache">清空答案缓存</button>
+        <button class="ghost-btn primary" id="saveCfg">保存</button>
+      </div>
+      <p class="field-note" id="cfgNote"></p>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="ai.js"></script>
+</body>
+</html>

@@ -326,6 +326,28 @@ a { color: var(--accent); text-decoration: none; }
 .dir-chevron { color: var(--ink-3); flex-shrink: 0; }
 
 .dir-num.tip { background: var(--gold-soft); color: var(--gold); }
+.dir-num.ai { background: var(--accent-soft); color: var(--accent); font-size: 11px; letter-spacing: 0.5px; }
+
+/* 卡片上的 AI 讲解按钮 */
+.card-ai {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin: -2px 2px 0 0;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.card-ai:active { transform: scale(0.88); }
+
+@media (hover: hover) {
+  .card-ai:hover { background: var(--accent); color: #fff; }
+}
 
 /* ============ 做题技巧 ============ */
 .tip-group { margin-top: 26px; scroll-margin-top: calc(var(--top-h) + 14px); }

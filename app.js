@@ -154,8 +154,16 @@
       '<path d="M12 20.3s-7.4-4.6-9.2-9A5.1 5.1 0 0 1 12 6.4a5.1 5.1 0 0 1 9.2 4.9c-1.8 4.4-9.2 9-9.2 9z"/></svg>';
     fav.addEventListener("click", function () { toggleFav(item, fav); });
 
+    var aiBtn = document.createElement("a");
+    aiBtn.className = "card-ai";
+    aiBtn.href = "ai.html?explain=" + encodeURIComponent(item.id);
+    aiBtn.title = "AI 讲解";
+    aiBtn.setAttribute("aria-label", "AI 讲解 " + item.name);
+    aiBtn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5l1.5 3.9 3.9 1.5-3.9 1.5L12 15.3l-1.5-3.9L6.6 9.9l3.9-1.5z"/><path d="M17.8 15.2l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>';
+
     head.appendChild(idxEl);
     head.appendChild(name);
+    head.appendChild(aiBtn);
     head.appendChild(fav);
     card.appendChild(head);
 
@@ -301,13 +309,24 @@
     if (!wrap) return;
     var frag = document.createDocumentFragment();
 
-    // 专题：做题技巧
+    // 专题：AI 助手 + 做题技巧
+    var gt = document.createElement("div");
+    gt.className = "dir-group";
+    var ht = document.createElement("h2");
+    ht.textContent = "专题";
+    gt.appendChild(ht);
+
+    var aiRow = document.createElement("a");
+    aiRow.className = "dir-row";
+    aiRow.href = "ai.html";
+    aiRow.innerHTML =
+      '<span class="dir-num ai">AI</span>' +
+      '<span class="dir-main"><b>AI 数学助手</b><em>公式讲解 · 解题步骤 · 练习生成</em></span>' +
+      '<span class="dir-count">对话</span>' +
+      '<svg class="dir-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+    gt.appendChild(aiRow);
+
     if (data.tips && data.tips.length) {
-      var gt = document.createElement("div");
-      gt.className = "dir-group";
-      var ht = document.createElement("h2");
-      ht.textContent = "专题";
-      gt.appendChild(ht);
       var at = document.createElement("a");
       at.className = "dir-row";
       at.href = "tips.html";
@@ -317,8 +336,8 @@
         '<span class="dir-count">' + data.tips.length + " 条</span>" +
         '<svg class="dir-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
       gt.appendChild(at);
-      frag.appendChild(gt);
     }
+    frag.appendChild(gt);
 
     data.chapters.forEach(function (ch, gi) {
       var g = document.createElement("div");
@@ -359,24 +378,33 @@
     var meta = $("#pageMeta");
     if (meta) meta.textContent = sec.items.length + " 条公式 · 搜索可按名称、条件与关键词过滤";
 
-    // 胶囊导航（跨页）
+    // 胶囊导航（跨页）：当前章节放第一个
     var chips = $("#chipsRow");
     if (chips) {
-      allSections().forEach(function (x) {
+      var list = allSections().filter(function (x) { return x.sec.id !== sec.id; });
+      list.unshift({ ch: ch, sec: sec });
+      list.forEach(function (x) {
         var a = document.createElement("a");
         a.className = "chip" + (x.sec.id === sec.id ? " active" : "");
         a.href = "section.html?id=" + x.sec.id;
         a.textContent = x.sec.title;
         chips.appendChild(a);
       });
+      chips.scrollLeft = 0;
     }
 
     var box = $("#cards");
     var delay = 0;
     sec.items.forEach(function (item, ii) {
       var rec = buildCard(item, ii + 1, {});
-      rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
-      delay += 45;
+      if (ii < 10) {
+        rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
+        delay += 45;
+      } else {
+        rec.el.style.animation = "none";
+        rec.el.style.opacity = "1";
+        rec.el.style.transform = "none";
+      }
       cards.push(rec);
       box.appendChild(rec.el);
     });
@@ -452,8 +480,14 @@
       cardsBox.className = "cards";
       list.forEach(function (tip, ii) {
         var rec = buildTipCard(tip, ii + 1, {});
-        rec.el.style.animationDelay = Math.min(delay, 320) + "ms";
-        delay += 45;
+        if (delay < 400) {
+          rec.el.style.animationDelay = delay + "ms";
+          delay += 45;
+        } else {
+          rec.el.style.animation = "none";
+          rec.el.style.opacity = "1";
+          rec.el.style.transform = "none";
+        }
         total++;
         cards.push(rec);
         cardsBox.appendChild(rec.el);
@@ -461,6 +495,25 @@
       sec.appendChild(cardsBox);
       box.appendChild(sec);
     });
+
+    // 顶部导航：题型胶囊（对齐公式页的胶囊导航）
+    var chipRow = $("#chipsRow");
+    if (chipRow) {
+      groups.forEach(function (gname, gi) {
+        var b = document.createElement("button");
+        b.className = "chip" + (gi === 0 ? " active" : "");
+        b.type = "button";
+        b.textContent = TIP_GROUP_TITLE[gname] || gname;
+        b.addEventListener("click", function () {
+          var target = document.getElementById("g-tip-" + gi);
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+          $$("#chipsRow .chip").forEach(function (c) { c.classList.remove("active"); });
+          b.classList.add("active");
+        });
+        chipRow.appendChild(b);
+      });
+      chipRow.scrollLeft = 0;
+    }
 
     var meta = $("#pageMeta");
     if (meta) meta.textContent = total + " 条技巧 · 按题型分类，可直接搜索“排除法”“辅助函数”等";

@@ -4,3 +4,9 @@ Thumbs.db
 # editor
 .vscode/
 *.log
+
+# secrets
+.env
+.env.*
+!.env.example
+
