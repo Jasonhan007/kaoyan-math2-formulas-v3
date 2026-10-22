@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    AI 数学助手 · 样式（延续 iOS 风格，尽量轻量）
    ============================================================ */
 
@@ -166,22 +166,7 @@
 .local-ask { margin-top: 4px; }
 
 /* ---------------- 状态条 ---------------- */
-.ai-statusbar {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom, 0px));
-  width: min(820px, calc(100% - 24px));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 6px;
-  font-size: 11.5px;
-  color: var(--ink-3);
-  pointer-events: none;
-  z-index: 45;
-}
+
 
 .ai-status-right { display: flex; gap: 6px; }
 
@@ -336,10 +321,7 @@
     bottom: 22px;
     width: min(760px, calc(100% - 40px));
   }
-  .ai-statusbar {
-    bottom: 88px;
-    width: min(760px, calc(100% - 40px));
-  }
+  
   .ai-intro h2 { font-size: 30px; }
   .bubble { font-size: 15px; }
 }
@@ -429,4 +411,66 @@
   background: #fff;
   color: var(--ink);
   box-shadow: 0 1px 4px rgba(16, 24, 40, 0.12);
+}
+
+/* ================= 布局修复（宽公式不再撑破气泡） ================= */
+.msg { min-width: 0; }
+.bubble { min-width: 0; }
+.msg-ai .bubble { overflow: hidden; }
+.msg-body { min-width: 0; max-width: 100%; }
+
+.md-block-math {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.md-inline-math {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: bottom;
+}
+
+/* 状态条移到输入框上方，避免被遮挡 */
+
+
+/* 设置里的下拉框 */
+.field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0.5px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: rgba(12, 20, 36, 0.04);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 17px, calc(100% - 12px) 17px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.field select:focus { border-color: var(--accent); background-color: #fff; outline: none; }
+#cfgModelCustom { margin-top: 8px; }
+
+@media (min-width: 1024px) {
+  
+}
+
+/* 状态条改为输入框卡片内的顶行（彻底避免遮挡） */
+/* 状态条：放在输入框卡片内的顶行（静态布局，永不遮挡） */
+.ai-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px 6px;
+  font-size: 11.5px;
+  color: var(--ink-3);
 }

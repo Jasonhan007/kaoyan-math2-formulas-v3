@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -37,12 +37,7 @@
         <span class="gear" aria-hidden="true">⚙️</span>
       </button>
     </div>
-    <nav class="topbar-row chips-row" id="modeRow" aria-label="功能选择">
-      <button class="chip active" data-mode="solve">解题助手</button>
-      <button class="chip" data-mode="explain">公式讲解</button>
-      <button class="chip" data-mode="search">智能搜索</button>
-      <button class="chip" data-mode="practice">出练习题</button>
-    </nav>
+
   </header>
 
   <main class="ai-main" id="chatLog">
@@ -60,17 +55,16 @@
     </div>
   </main>
 
-  <div class="ai-statusbar">
-    <span id="aiStatus">就绪</span>
-    <span class="ai-status-right">
-      <span class="ai-badge" id="modeBadge">解题助手</span>
-      <span class="ai-badge" id="proxyBadge" hidden>模拟</span>
-    </span>
-  </div>
-
   <div class="ai-composer" id="composer">
+    <div class="ai-statusbar">
+      <span id="aiStatus">就绪</span>
+      <span class="ai-status-right">
+        <span class="ai-badge" id="connBadge">直连</span>
+        <span class="ai-badge" id="proxyBadge" hidden>模拟</span>
+      </span>
+    </div>
     <div class="ai-composer-inner">
-      <textarea id="aiInput" rows="1" placeholder="输入题目或问题…（⌘/Ctrl + Enter 发送）" spellcheck="false"></textarea>
+      <textarea id="aiInput" rows="1" placeholder="粘贴题目或直接提问…（⌘/Ctrl + Enter 发送）" spellcheck="false"></textarea>
       <button class="ai-send" id="sendBtn" aria-label="发送">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12 20 4.5 14.5 20 12 13.5 4.5 12z"/></svg>
       </button>
@@ -142,6 +136,17 @@
           <em>对应请求头 x-app-token，防止他人白用你的额度。</em>
         </label>
       </div>
+
+      <label class="field">
+        <span>模型</span>
+        <select id="cfgModel">
+          <option value="deepseek-chat">deepseek-chat（通用对话，快且便宜）</option>
+          <option value="deepseek-reasoner">deepseek-reasoner（推理更强，更慢更贵）</option>
+          <option value="__custom">自定义模型名…</option>
+        </select>
+        <input id="cfgModelCustom" type="text" placeholder="例如 deepseek-chat" hidden autocomplete="off" spellcheck="false">
+        <em>模型决定能力与单价，具体计费以 DeepSeek 官方文档为准；换模型后旧缓存不命中。</em>
+      </label>
 
       <label class="field">
         <span>单次输出上限 max_tokens</span>

@@ -42,10 +42,11 @@
         base: c.base || "https://api.deepseek.com",
         proxy: c.proxy || "",
         token: c.token || "",
+        model: c.model || "deepseek-chat",
         maxTokens: Math.min(Math.max(Number(c.maxTokens) || 800, 200), 1200)
       };
     } catch (e) {
-      return { conn: "direct", key: "", base: "https://api.deepseek.com", proxy: "", token: "", maxTokens: 800 };
+      return { conn: "direct", key: "", base: "https://api.deepseek.com", proxy: "", token: "", model: "deepseek-chat", maxTokens: 800 };
     }
   }
   function chatEndpoint() {
@@ -99,30 +100,16 @@
     "4) 用户要的是可执行的方法，不要空泛鼓励。"
   ].join("\n");
 
-  var MODE_META = {
-    solve: { badge: "解题助手", ph: "粘贴题目：如 求 lim(x→0)(tan x−sin x)/x³" },
-    explain: { badge: "公式讲解", ph: "输入公式名或 LaTeX，如：点火公式 / ∫sec x dx" },
-    search: { badge: "智能搜索", ph: "用一句话描述要找的公式，如：圆域上的二重积分怎么化" },
-    practice: { badge: "出练习题", ph: "输入知识点与数量，如：二重积分 2 道" },
-    chat: { badge: "自由提问", ph: "随便问…" }
-  };
+  // 无模式选择：统一由模型自行判断意图（解题 / 讲解 / 出题 / 找公式）
+  var PROMPT_HEAD = "【请求】请判断下面这段内容的意图（解题 / 公式讲解 / 出练习题 / 找公式）并直接按要求作答。" +
+    "若是题目就按“思路 → 分步骤 → 结论 → 易错点”输出；若是知识点就讲含义、条件、易错点；若要求出题就给 2~3 道题＋答案解析。\n\n";
 
-  function buildPrompt(text, mode) {
-    if (mode === "solve") {
-      return "【解题请求】请按考研数学二范围解答下面这道题，输出格式：\n1. 思路提示（一两句）\n2. 分步骤解答（关键步骤写清依据的公式/定理）\n3. 结论\n4. 易错点或错因分析\n\n题目：\n" + text;
+  function promptFor(text, kind) {
+    if (kind === "explain") {
+      return "【公式讲解】请讲解下面的公式或知识点，输出：\n1. 含义（它在算什么）\n2. 推导思路或来源（讲清关键一步）\n3. 适用条件\n4. 常见易错点 / 使用场景\n\n对象：" + text;
     }
-    if (mode === "explain") {
-      return "【公式讲解】请讲解下面的公式或知识点，输出：\n1. 含义（它在算什么）\n2. 推导思路或来源（不必过长，讲清关键一步）\n3. 适用条件\n4. 常见易错点 / 使用场景\n\n对象：" + text;
-    }
-    if (mode === "practice") {
-      return "【出题请求】请针对下面的知识点出练习题，输出：\n1. 2~3 道题（考研数学二真题难度，题干完整）\n2. 每题给出答案与关键步骤解析\n3. 标注该题的易错点\n\n知识点：" + text;
-    }
-    if (mode === "search") {
-      return "【找公式】用户用自然语言描述需求，请先判断对应哪些考研数学二公式/定理，再给出：\n1. 相关公式（LaTeX 写出）及含义\n2. 适用条件\n3. 典型用法一句示例\n4. 若描述模糊，给出最可能的 2 个方向\n\n用户描述：" + text;
-    }
-    return text;
+    return PROMPT_HEAD + text;
   }
-
   /* ---------------- 本地公式库检索 ---------------- */
   var localPool = null;
   function buildPool() {
@@ -194,17 +181,12 @@
   }
 
   function renderInline(parent, text) {
-    var re = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\*\*[^*]+\*\*)/g;
+    var re = /(\$[^$\n]+?\$|\*\*[^*]+\*\*)/g;
     var last = 0, m;
     while ((m = re.exec(text))) {
       if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
       var tok = m[0];
-      if (tok.slice(0, 2) === "$$") {
-        var d = document.createElement("div");
-        d.className = "md-block-math";
-        katexInto(d, tok.slice(2, -2), true);
-        parent.appendChild(d);
-      } else if (tok.charAt(0) === "$") {
+      if (tok.charAt(0) === "$") {
         var s = document.createElement("span");
         s.className = "md-inline-math";
         katexInto(s, tok.slice(1, -1), false);
@@ -221,6 +203,22 @@
 
   function renderRich(container, text) {
     container.textContent = "";
+    // 先把行间公式 $$...$$ 单独切出来，避免嵌进 <p> 里撑破布局
+    var segs = String(text).split(/(\$\$[\s\S]+?\$\$)/);
+    segs.forEach(function (seg) {
+      if (!seg.trim()) return;
+      if (seg.slice(0, 2) === "$$" && seg.slice(-2) === "$$") {
+        var d = document.createElement("div");
+        d.className = "md-block-math";
+        katexInto(d, seg.slice(2, -2), true);
+        container.appendChild(d);
+        return;
+      }
+      renderSegments(container, seg);
+    });
+  }
+
+  function renderSegments(container, text) {
     var blocks = String(text).split(/\n{2,}/);
     blocks.forEach(function (block) {
       var lines = block.split("\n").filter(function (l, i, arr) { return !(l.trim() === "" && i === arr.length - 1); });
@@ -290,12 +288,25 @@
 
   function infoText(meta) {
     var bits = [];
-    if (meta.model) bits.push("模型 " + meta.model);
+    if (meta.model) bits.push(meta.model);
     if (meta.ms != null) bits.push((meta.ms / 1000).toFixed(1) + "s");
-    if (meta.usage && meta.usage.completion_tokens) bits.push("输出 " + meta.usage.completion_tokens + " tokens");
+    var u = meta.usage;
+    if (u && (u.prompt_tokens != null || u.completion_tokens != null)) {
+      bits.push("输入 " + (u.prompt_tokens || 0) + " / 输出 " + (u.completion_tokens || 0) + " tokens");
+    } else if (meta.estTokens != null) {
+      bits.push("输出 ≈ " + meta.estTokens + " tokens（估算）");
+    }
     if (meta.cached) bits.push("缓存");
     if (meta.mock) bits.push("开发模拟");
     return bits.join(" · ");
+  }
+
+  function estimateTokens(text) {
+    var s = String(text || "");
+    // 粗估：中文约 1 字≈0.65 token，其余按 4 字符≈1 token
+    var cjk = (s.match(/[\u4e00-\u9fa5]/g) || []).length;
+    var other = s.length - cjk;
+    return Math.max(1, Math.round(cjk * 0.65 + other / 4));
   }
 
   function addErrorMsg(code, detail) {
@@ -341,7 +352,7 @@
     });
     var askBtn = el("button", "ghost-btn local-ask", "让 AI 深入解释");
     askBtn.addEventListener("click", function () {
-      send(buildPromptForLocal(query, hits), "search-explain");
+      send(buildPromptForLocal(query, hits), { forceAI: true });
     });
     rec.body.appendChild(askBtn);
     rec.info.hidden = false;
@@ -371,33 +382,42 @@
     return [{ role: "system", content: SYSTEM }].concat(hist);
   }
 
-  async function send(rawText, modeOverride) {
+  /* 只有“像查公式的短语”才先走本地库，其余一律交给 AI */
+  function isLookupQuery(q) {
+    var s = String(q).trim();
+    if (!s || s.length > 16) return false;
+    if (/[=+\-×÷∫∑√^<>≤≥()（）0-9]/.test(s)) return false;
+    if (/(为什么|怎么|如何|解释|区别|证明|求|计算|步骤|练习|题)/.test(s)) return false;
+    return true;
+  }
+
+  async function send(rawText, opts) {
+    opts = opts || {};
     var text = String(rawText || "").trim();
     if (!text || state.busy) return;
-    var mode = modeOverride || state.mode;
 
     addUserMsg(text);
     state.messages.push({ role: "user", content: text });
     saveChat();
 
-    // 智能搜索：先本地
-    if (mode === "search") {
+    // 本地优先：只有明确的“查公式”短查询才命中本地库，不调用模型
+    if (!opts.forceAI && !opts.explain && isLookupQuery(text)) {
       var hits = localSearch(text);
-      if (hits.length) {
+      if (hits.length >= 2 || (hits.length === 1 && hits[0].title.length <= text.length + 4)) {
         state.expectAnswer = false;
         addLocalResults(text, hits);
         return;
       }
     }
 
-    var prompt = buildPrompt(text, mode);
-    var key = cacheKey(text, mode);
+    var prompt = promptFor(text, opts.explain ? "explain" : "");
+    var key = cacheKey(text, opts.explain ? "explain" : "chat");
     var cached = getCache(key);
     if (cached) {
       var r0 = addAssistantMsg();
       renderRich(r0.body, cached.a);
       r0.info.hidden = false;
-      r0.info.textContent = infoText({ model: cached.m && cached.m.model, usage: cached.m && cached.m.usage, cached: true });
+      r0.info.textContent = infoText({ model: (cached.m && cached.m.model) || cfg.model, usage: cached.m && cached.m.usage, cached: true, estTokens: (!cached.m || !cached.m.usage || cached.m.usage.completion_tokens == null) ? estimateTokens(cached.a) : null });
       state.messages.push({ role: "assistant", content: c000(cached.a) });
       saveChat();
       setStatus("缓存命中（未发起请求）");
@@ -450,11 +470,12 @@
       };
       if (cfg.conn === "direct") {
         reqHeaders.Authorization = "Bearer " + cfg.key;
-        reqBody.model = "deepseek-chat";
+        reqBody.model = cfg.model;
         reqBody.stream_options = { include_usage: true };
       } else if (cfg.token) {
         reqHeaders["x-app-token"] = cfg.token;
       }
+      reqBody.model = cfg.model;
 
       var res = await fetch(chatEndpoint(), {
         method: "POST",
@@ -490,7 +511,7 @@
         var j = await res.json();
         acc = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
         usage = j.usage || null;
-        model = j.model || "";
+        model = j.model || cfg.model;
       } else {
         var reader = res.body.getReader();
         var dec = new TextDecoder("utf-8");
@@ -527,7 +548,7 @@
       renderRich(rec.body, acc);
       var ms = Math.round(performance.now() - t0);
       rec.info.hidden = false;
-      rec.info.textContent = infoText({ model: model, usage: usage, ms: ms, mock: mock });
+      rec.info.textContent = infoText({ model: model || cfg.model, usage: usage, ms: ms, mock: mock, estTokens: (!usage || usage.completion_tokens == null) ? estimateTokens(acc) : null });
       $("#proxyBadge").hidden = !mock;
       setStatus(mock ? "完成（开发模拟，非真实模型）" : "完成 · " + (ms / 1000).toFixed(1) + "s");
 
@@ -554,23 +575,9 @@
   /* 历史里存截断版本，控制后续请求的 token */
   function c000(s) { return String(s); }
 
-  /* ---------------- 模式与输入 ---------------- */
-  function setMode(mode) {
-    state.mode = mode;
-    $$("#modeRow .chip").forEach(function (c) {
-      c.classList.toggle("active", c.dataset.mode === mode);
-    });
-    var meta = MODE_META[mode] || MODE_META.chat;
-    $("#modeBadge").textContent = meta.badge;
-    $("#aiInput").placeholder = meta.ph;
-  }
-
+  /* ---------------- 输入 ---------------- */
   function bind() {
     log = $("#chatLog");
-
-    $$("#modeRow .chip").forEach(function (c) {
-      c.addEventListener("click", function () { setMode(c.dataset.mode); });
-    });
 
     var input = $("#aiInput");
     var autoGrow = function () {
@@ -602,7 +609,6 @@
       if (!b) return;
       input.value = b.dataset.fill;
       autoGrow();
-      setMode(b.dataset.fill.indexOf("出 ") === 0 ? "practice" : "solve");
       input.focus();
     });
 
@@ -625,11 +631,19 @@
       cfg.base = ($("#cfgBase").value.trim() || "https://api.deepseek.com").replace(/\/+$/, "");
       cfg.proxy = $("#cfgProxy").value.trim();
       cfg.token = $("#cfgToken").value.trim();
+      var sel = $("#cfgModel").value;
+      var custom = $("#cfgModelCustom").value.trim();
+      cfg.model = (sel === "__custom" ? (custom || "deepseek-chat") : sel) || "deepseek-chat";
       cfg.maxTokens = Math.min(Math.max(Number($("#cfgTokens").value) || 800, 200), 1200);
       saveCfg();
+      updateConnBadge();
       $("#cfgNote").textContent = uiConn === "direct"
         ? (cfg.key ? "已保存到本机浏览器，可以直接提问了。" : "已保存，但还没填密钥。")
         : "已保存（密钥仍在服务端，网页里没有密钥）。";
+    });
+
+    $("#cfgModel").addEventListener("change", function () {
+      $("#cfgModelCustom").hidden = this.value !== "__custom";
     });
 
     $("#clearKey").addEventListener("click", function () {
@@ -710,6 +724,12 @@
     } catch (e) {}
   }
 
+  function updateConnBadge() {
+    var b = $("#connBadge");
+    if (!b) return;
+    b.textContent = cfg.conn === "direct" ? "直连 · " + cfg.model : "代理 · " + cfg.model;
+  }
+
   function syncConnUI() {
     $$("#connSeg .seg-btn").forEach(function (b) {
       b.classList.toggle("active", b.dataset.conn === uiConn);
@@ -727,7 +747,18 @@
     $("#cfgProxy").value = cfg.proxy;
     $("#cfgToken").value = cfg.token;
     $("#cfgTokens").value = cfg.maxTokens;
+    var known = ["deepseek-chat", "deepseek-reasoner"];
+    if (known.indexOf(cfg.model) >= 0) {
+      $("#cfgModel").value = cfg.model;
+      $("#cfgModelCustom").hidden = true;
+      $("#cfgModelCustom").value = "";
+    } else {
+      $("#cfgModel").value = "__custom";
+      $("#cfgModelCustom").hidden = false;
+      $("#cfgModelCustom").value = cfg.model;
+    }
     syncConnUI();
+    updateConnBadge();
     $("#cfgNote").textContent = cfg.conn === "direct"
       ? (cfg.key ? "当前：直连 DeepSeek（密钥存在本机浏览器）" : "当前：直连，但还没填密钥")
       : "当前：代理模式（密钥在服务端）";
@@ -772,18 +803,17 @@
     if (!id) return;
     var hit = findFormula(id);
     if (!hit) return;
-    setMode("explain");
     var prompt = "【公式】" + hit.item.name +
       "\n公式 LaTeX：" + hit.item.tex +
       (hit.item.cond ? "\n页面已有成立条件：" + hit.item.cond : "") +
       (hit.item.warn ? "\n页面已有提醒：" + hit.item.warn : "") +
       "\n所在章节：" + hit.ch.title + " · " + hit.sec.title;
-    send(prompt, "explain");
+    send(prompt, { explain: true });
   }
 
   function init() {
     bind();
-    setMode("solve");
+    updateConnBadge();
     restoreChat();
     autoExplain();
   }
