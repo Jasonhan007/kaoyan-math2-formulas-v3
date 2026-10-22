@@ -402,3 +402,31 @@
 /* 设置按钮：让 ⚙️ 在浅色下更清晰 */
 #settingsBtn { background: rgba(12, 20, 36, 0.06); }
 #settingsBtn .gear { font-size: 17px; filter: saturate(0.92) brightness(0.9); }
+
+/* 连接方式分段控件 */
+.seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(12, 20, 36, 0.06);
+  margin-bottom: 14px;
+}
+.seg-btn {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-radius: 9px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.seg-btn.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.12);
+}

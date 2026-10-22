@@ -109,41 +109,64 @@
       <button class="ghost-btn" id="sheetClose">关闭</button>
     </div>
     <div class="sheet-body">
-      <details class="cfg-help" open>
-        <summary>怎么填 API（30 秒看懂）</summary>
-        <ol>
-          <li><b>电脑上用</b>：把项目里的 <code>.env.example</code> 复制成 <code>.env</code>，填一行
-            <code>DEEPSEEK_API_KEY=sk-你的密钥</code>，双击 <code>start-ai.cmd</code>，
-            打开 <code>http://127.0.0.1:8765/ai.html</code> 即可（同源代理，这里不用填任何东西）。</li>
-          <li><b>手机 / 线上（GitHub Pages）</b>：网页没有后端，必须先部署一个代理（Cloudflare Worker，免费额度足够个人用），
-            再把它给你的 <code>https://xxx.workers.dev/api/chat</code> 填到下面的「代理地址」。步骤见
-            <a href="AI-SETUP.md" target="_blank" rel="noopener">AI-SETUP.md</a>。</li>
-          <li>填完点「测试连接」，看到 ✅ 就说明通了。</li>
-        </ol>
-        <p class="cfg-help-warn">密钥永远不要填在本页——本页只填代理地址。网页是公开的，填进来等于公开泄露。</p>
-      </details>
+      <div class="seg" id="connSeg" role="tablist" aria-label="连接方式">
+        <button type="button" class="seg-btn active" data-conn="direct">直连（最简单）</button>
+        <button type="button" class="seg-btn" data-conn="proxy">代理（更安全）</button>
+      </div>
 
-      <label class="field">
-        <span>代理地址</span>
-        <input id="cfgProxy" type="url" placeholder="留空 = 同源 /api/chat；线上填 https://你的worker.workers.dev/api/chat" autocomplete="off">
-        <em>API Key 只保存在服务端；这里只填代理地址。</em>
-      </label>
-      <label class="field">
-        <span>访问口令（可选）</span>
-        <input id="cfgToken" type="text" placeholder="Worker 设置了 APP_TOKEN 时填写" autocomplete="off">
-        <em>对应请求头 x-app-token，防止他人白用你的额度。</em>
-      </label>
+      <!-- 直连：手机浏览器直接填 Key，存在本机 -->
+      <div id="directFields">
+        <label class="field">
+          <span>DeepSeek API 密钥</span>
+          <input id="cfgKey" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false">
+          <em>只保存在本机浏览器（localStorage），只发给 api.deepseek.com；换设备/清缓存即失效。</em>
+        </label>
+        <label class="field">
+          <span>接口地址</span>
+          <input id="cfgBase" type="url" placeholder="https://api.deepseek.com" autocomplete="off">
+          <em>默认官方地址；如果你用的是兼容网关，填它的地址（不带 /chat/completions）。</em>
+        </label>
+        <p class="cfg-help-warn">公用设备、借给别人用的手机请不要保存密钥；用完点下方「清除密钥」。</p>
+      </div>
+
+      <!-- 代理：密钥在服务端，适合分享/多人 -->
+      <div id="proxyFields" hidden>
+        <label class="field">
+          <span>代理地址</span>
+          <input id="cfgProxy" type="url" placeholder="留空 = 同源 /api/chat；线上填 https://你的worker.workers.dev/api/chat" autocomplete="off">
+          <em>密钥只在服务端；这里只填代理地址。</em>
+        </label>
+        <label class="field">
+          <span>访问口令（可选）</span>
+          <input id="cfgToken" type="text" placeholder="Worker 设置了 APP_TOKEN 时填写" autocomplete="off">
+          <em>对应请求头 x-app-token，防止他人白用你的额度。</em>
+        </label>
+      </div>
+
       <label class="field">
         <span>单次输出上限 max_tokens</span>
         <input id="cfgTokens" type="number" min="200" max="1200" step="100" value="800">
         <em>越大越贵越慢；公式讲解 600~800、解题 800~1000 足够。</em>
       </label>
+
       <div class="field-row">
         <button class="ghost-btn" id="testConn">测试连接</button>
-        <button class="ghost-btn" id="clearCache">清空答案缓存</button>
+        <button class="ghost-btn" id="clearKey" hidden>清除密钥</button>
+        <button class="ghost-btn" id="clearCache">清空缓存</button>
         <button class="ghost-btn primary" id="saveCfg">保存</button>
       </div>
       <p class="field-note" id="cfgNote"></p>
+
+      <details class="cfg-help">
+        <summary>两种方式怎么选？</summary>
+        <ol>
+          <li><b>直连</b>：打开本页 → 粘密钥 → 保存 → 测试连接。手机上一分钟搞定，适合自己用。
+            密钥仅存在这台设备的浏览器里，不走任何第三方服务器。</li>
+          <li><b>代理</b>：密钥放在服务端（Cloudflare Worker / 本机 Node 代理），网页里永远没有密钥，
+            适合分享给别人或多人使用。步骤见 <a href="AI-SETUP.md" target="_blank" rel="noopener">AI-SETUP.md</a>。</li>
+          <li>两种方式都只在你点发送 / 点「AI 讲解」时才请求模型。</li>
+        </ol>
+      </details>
     </div>
   </div>
 

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    AI 数学助手 · 前端逻辑
    - 只在用户主动操作时请求模型
    - 本地优先：公式搜索先查 data.js，命中不调 API
@@ -19,6 +19,8 @@
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
   var cfg = loadCfg();
+  var uiConn = cfg.conn;   // 设置面板里当前选中的连接方式
+
   var state = {
     mode: "solve",
     messages: loadChat(),   // 仅 role/content，用于连续对话
@@ -34,13 +36,21 @@
     try {
       var c = JSON.parse(localStorage.getItem(LS_CFG) || "{}");
       return {
+        // direct = 浏览器直连 DeepSeek（密钥存本机）；proxy = 走服务端代理（密钥不进前端）
+        conn: c.conn || (c.proxy ? "proxy" : "direct"),
+        key: c.key || "",
+        base: c.base || "https://api.deepseek.com",
         proxy: c.proxy || "",
         token: c.token || "",
         maxTokens: Math.min(Math.max(Number(c.maxTokens) || 800, 200), 1200)
       };
     } catch (e) {
-      return { proxy: "", token: "", maxTokens: 800 };
+      return { conn: "direct", key: "", base: "https://api.deepseek.com", proxy: "", token: "", maxTokens: 800 };
     }
+  }
+  function chatEndpoint() {
+    if (cfg.conn === "direct") return String(cfg.base || "https://api.deepseek.com").replace(/\/+$/, "") + "/chat/completions";
+    return cfg.proxy || "/api/chat";
   }
   function saveCfg() {
     try { localStorage.setItem(LS_CFG, JSON.stringify(cfg)); } catch (e) {}
@@ -48,7 +58,7 @@
 
   /* ---------------- 缓存 ---------------- */
   function cacheKey(text, mode) {
-    return mode + "|" + String(text).trim().replace(/\s+/g, " ").toLowerCase() + "|" + cfg.maxTokens;
+    return cfg.conn + "|" + mode + "|" + String(text).trim().replace(/\s+/g, " ").toLowerCase() + "|" + cfg.maxTokens;
   }
   function readCache() {
     try { return JSON.parse(localStorage.getItem(LS_CACHE) || "{}") || {}; } catch (e) { return {}; }
@@ -298,6 +308,10 @@
       TIMEOUT: "请求超时（90 秒）：网络较慢或模型繁忙，可稍后重试。",
       NETWORK: "网络错误：无法连接代理，请检查代理地址与网络。",
       NO_PROXY: "代理不可用：当前地址返回了非 JSON 内容（线上请到设置里填写 Worker 地址）。",
+      NO_LOCAL_KEY: "还没填 API 密钥：点右上角 ⚙️ → 直连 → 粘贴 sk- 开头的密钥 → 保存。",
+      AUTH: "密钥无效或已过期（401）：请重新复制完整的 sk- 密钥。",
+      BALANCE: "账户余额不足（402）：请到 DeepSeek 控制台充值后重试。",
+      RATE: "请求太频繁（429）：等几秒再发。",
       BAD_REQUEST: "请求格式有误，请换个描述再试。"
     };
     box.textContent = map[code] || ("出错了：" + (detail && detail.message ? detail.message : code));
@@ -421,19 +435,31 @@
     var timer = setTimeout(function () { ctrl.abort("timeout"); }, 95000);
 
     try {
-      var res = await fetch(cfg.proxy || "/api/chat", {
+      if (cfg.conn === "direct" && !cfg.key) {
+        rec.wrap.remove();
+        addErrorMsg("NO_LOCAL_KEY");
+        return;
+      }
+
+      var reqHeaders = { "Content-Type": "application/json" };
+      var reqBody = {
+        messages: historyForApi(),
+        max_tokens: cfg.maxTokens,
+        temperature: 0.6,
+        stream: true
+      };
+      if (cfg.conn === "direct") {
+        reqHeaders.Authorization = "Bearer " + cfg.key;
+        reqBody.model = "deepseek-chat";
+        reqBody.stream_options = { include_usage: true };
+      } else if (cfg.token) {
+        reqHeaders["x-app-token"] = cfg.token;
+      }
+
+      var res = await fetch(chatEndpoint(), {
         method: "POST",
-        headers: (function () {
-          var h = { "Content-Type": "application/json" };
-          if (cfg.token) h["x-app-token"] = cfg.token;
-          return h;
-        })(),
-        body: JSON.stringify({
-          messages: historyForApi(),
-          max_tokens: cfg.maxTokens,
-          temperature: 0.6,
-          stream: true
-        }),
+        headers: reqHeaders,
+        body: JSON.stringify(reqBody),
         signal: ctrl.signal
       });
 
@@ -444,8 +470,18 @@
         try { errJson = await res.json(); } catch (e) { errJson = null; }
         rec.wrap.remove();
         clearTimeout(timer);
-        if (!errJson) { addErrorMsg("NO_PROXY"); }
-        else { addErrorMsg(errJson.error || "UPSTREAM", errJson); }
+        if (cfg.conn === "direct") {
+          var msg = errJson && errJson.error && (errJson.error.message || errJson.error);
+          var code2 = res.status === 401 ? "AUTH"
+            : res.status === 402 ? "BALANCE"
+            : res.status === 429 ? "RATE"
+            : "UPSTREAM";
+          addErrorMsg(code2, { status: res.status, detail: typeof msg === "string" ? msg : "" });
+        } else if (!errJson) {
+          addErrorMsg("NO_PROXY");
+        } else {
+          addErrorMsg(errJson.error || "UPSTREAM", errJson);
+        }
         return;
       }
 
@@ -574,22 +610,69 @@
     $("#settingsBtn").addEventListener("click", openSheet);
     $("#sheetMask").addEventListener("click", closeSheet);
     $("#sheetClose").addEventListener("click", closeSheet);
+
+    // 连接方式切换
+    $$("#connSeg .seg-btn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        uiConn = b.dataset.conn;
+        syncConnUI();
+      });
+    });
+
     $("#saveCfg").addEventListener("click", function () {
+      cfg.conn = uiConn;
+      cfg.key = $("#cfgKey").value.trim();
+      cfg.base = ($("#cfgBase").value.trim() || "https://api.deepseek.com").replace(/\/+$/, "");
       cfg.proxy = $("#cfgProxy").value.trim();
       cfg.token = $("#cfgToken").value.trim();
       cfg.maxTokens = Math.min(Math.max(Number($("#cfgTokens").value) || 800, 200), 1200);
       saveCfg();
-      $("#cfgNote").textContent = "已保存（仅存在本机浏览器，不会上传）。";
+      $("#cfgNote").textContent = uiConn === "direct"
+        ? (cfg.key ? "已保存到本机浏览器，可以直接提问了。" : "已保存，但还没填密钥。")
+        : "已保存（密钥仍在服务端，网页里没有密钥）。";
+    });
+
+    $("#clearKey").addEventListener("click", function () {
+      cfg.key = "";
+      $("#cfgKey").value = "";
+      saveCfg();
+      $("#cfgNote").textContent = "已从本机浏览器清除密钥。";
     });
     $("#clearCache").addEventListener("click", function () {
       try { localStorage.removeItem(LS_CACHE); } catch (e) {}
       $("#cfgNote").textContent = "已清空答案缓存。";
     });
 
-    // 测试连接：用 GET 探活（不会调用模型，不产生 token 费用）
+    // 测试连接：直连走 /models 鉴权探测；代理走 GET 探活（都不调用模型、不花 token）
     $("#testConn").addEventListener("click", async function () {
-      var url = ($("#cfgProxy").value || "").trim() || "/api/chat";
       var note = $("#cfgNote");
+
+      if (uiConn === "direct") {
+        var key = $("#cfgKey").value.trim();
+        var base = ($("#cfgBase").value.trim() || "https://api.deepseek.com").replace(/\/+$/, "");
+        if (!key) { note.textContent = "请先填写 API 密钥（sk- 开头）。"; return; }
+        note.textContent = "测试中…（只请求 " + base + "/models，不消耗 token）";
+        try {
+          var r = await fetch(base + "/models", { headers: { Authorization: "Bearer " + key } });
+          if (r.ok) {
+            var jj = null;
+            try { jj = await r.json(); } catch (e) {}
+            var models = jj && jj.data ? jj.data.map(function (m) { return m.id; }).slice(0, 3).join(" / ") : "";
+            note.textContent = "✅ 密钥有效（直连 DeepSeek）" + (models ? "，可用模型：" + models : "") + "，可以提问了。";
+          } else if (r.status === 401) {
+            note.textContent = "❌ 密钥无效或已过期：请重新复制完整的 sk- 密钥。";
+          } else if (r.status === 402) {
+            note.textContent = "⚠ 密钥有效但账户余额不足，充值后可用。";
+          } else {
+            note.textContent = "⚠ 返回 HTTP " + r.status + "：" + (await r.text()).slice(0, 120);
+          }
+        } catch (e) {
+          note.textContent = "❌ 无法连接：" + (e && e.message || e) + "。检查网络或接口地址（需 https）。";
+        }
+        return;
+      }
+
+      var url = ($("#cfgProxy").value || "").trim() || "/api/chat";
       note.textContent = "测试中… " + url;
       try {
         var res = await fetch(url, { method: "GET" });
@@ -627,13 +710,27 @@
     } catch (e) {}
   }
 
+  function syncConnUI() {
+    $$("#connSeg .seg-btn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.conn === uiConn);
+    });
+    var direct = uiConn === "direct";
+    $("#directFields").hidden = !direct;
+    $("#proxyFields").hidden = direct;
+    $("#clearKey").hidden = !direct;
+  }
+
   function openSheet() {
+    uiConn = cfg.conn;
+    $("#cfgKey").value = cfg.key;
+    $("#cfgBase").value = cfg.base;
     $("#cfgProxy").value = cfg.proxy;
     $("#cfgToken").value = cfg.token;
     $("#cfgTokens").value = cfg.maxTokens;
-    $("#cfgNote").textContent = cfg.proxy
-      ? "当前使用自定义代理：" + cfg.proxy
-      : "当前使用同源 /api/chat（需本地 node server/proxy.mjs，或已配好线上 Worker）";
+    syncConnUI();
+    $("#cfgNote").textContent = cfg.conn === "direct"
+      ? (cfg.key ? "当前：直连 DeepSeek（密钥存在本机浏览器）" : "当前：直连，但还没填密钥")
+      : "当前：代理模式（密钥在服务端）";
     $("#sheet").hidden = false;
     $("#sheetMask").hidden = false;
     document.body.style.overflow = "hidden";

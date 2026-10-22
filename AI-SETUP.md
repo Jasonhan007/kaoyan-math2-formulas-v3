@@ -15,7 +15,27 @@
 
 ---
 
-## 一、本地运行
+## 一、最快方式：手机浏览器直连（无需后端）
+
+DeepSeek 官方 API 支持浏览器跨域（实测 `OPTIONS` 预检与 `POST` 响应均返回 `Access-Control-Allow-Origin`），因此可以**直接在手机上填密钥**：
+
+1. 手机打开 `https://jasonhan007.github.io/kaoyan-math2-formulas-v3/ai.html`
+2. 点右上角 **⚙️** → 选 **直连（最简单）**
+3. 粘贴 `sk-…` 密钥 → **保存** → 点 **测试连接**
+4. 看到「✅ 密钥有效（直连 DeepSeek）」就能直接提问
+
+**密钥去了哪**：只存在这台设备的浏览器 `localStorage`（键 `m2-ai-config`），请求只发往 `https://api.deepseek.com`，不经过任何第三方服务器。本站不加载任何第三方脚本（KaTeX 本地化），因此不会被外部脚本读走。
+
+**风险与对策（请自觉遵守）**：
+
+- 公用/借出去的手机会被别人读到密钥 → 用完点设置里的 **「清除密钥」**；
+- 浏览器清缓存/换设备后需重新粘贴；
+- 如果你要把站点分享给别人用，请改用**代理模式**（密钥留在服务端），见下一节；
+- 密钥泄露立即到 DeepSeek 控制台吊销重建。
+
+---
+
+## 二、本地运行（代理模式，密钥在服务端）
 
 ### 方式 A：双击（Windows，推荐新手）
 
@@ -69,7 +89,7 @@ node server/proxy.mjs       # Node 18+，零依赖，同时托管静态文件与
 
 ---
 
-## 二、部署到线上（GitHub Pages + Cloudflare Worker）
+## 三、部署到线上（GitHub Pages + Cloudflare Worker）
 
 GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推荐 **Cloudflare Workers**：单文件、免费额度足够个人使用、无需自己运维服务器。
 
@@ -97,7 +117,7 @@ GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推�
 
 ---
 
-## 三、成本控制设计（页面里实际生效）
+## 四、成本控制设计（页面里实际生效）
 
 | 措施 | 实现 |
 |---|---|
@@ -113,7 +133,7 @@ GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推�
 
 ---
 
-## 四、功能与调用点
+## 五、功能与调用点
 
 | 功能 | 触发方式 | 是否调用模型 |
 |---|---|---|
@@ -128,7 +148,7 @@ GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推�
 
 ---
 
-## 五、已知限制（如实说明）
+## 六、已知限制（如实说明）
 
 - 仓库内**没有**任何 API Key，因此真实模型调用**未在本机实测**；已实测的是：代理的转发/流式/超时/错误码路径、前端流式渲染、公式排版、缓存命中、本地搜索、无 Key 时的 501 提示（详见 `AI-SETUP.md` 末尾的测试记录）。
 - URL 里带 `?explain=` 会**自动发送**一次讲解请求（这是用户点击「AI 讲解」后的落地页），如需改为手动，把 `ai.js` 中 `autoExplain` 的自动调用去掉即可。
@@ -136,7 +156,7 @@ GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推�
 
 ---
 
-## 六、实测记录（2026-10，本机）
+## 七、实测记录（2026-10，本机）
 
 环境：Windows + Node（MiMo 内置 v24）+ Playwright 无头 Chromium。
 
@@ -153,9 +173,13 @@ GitHub Pages 只能托管静态文件，`/api/chat` 必须由外部提供。推�
 | 章节胶囊重排 | 进入 `section.html?id=la2`，胶囊第一位就是「矩阵」且高亮 ✅ |
 | 技巧页顶导航 | 4 个题型胶囊，点击滚动至对应分组并置为 active ✅ |
 | 回归 | 章节搜索「点火」→ 2 条；收藏角标 1；收藏页列表正常；4 个 dock tab；402px / 1440px 无横向溢出；控制台 0 报错 ✅ |
-| 密钥保护 | 仓库内无任何 Key；`.env` 已忽略；前端 localStorage 仅存代理地址/口令/max_tokens ✅ |
+| 密钥保护 | 仓库内无任何 Key；`.env` 已忽略；直连模式密钥只存本机 localStorage，请求只发往 api.deepseek.com ✅ |
+| 直连 CORS | 从 `https://jasonhan007.github.io` 预检 OPTIONS 200 + `Access-Control-Allow-Origin` 回显；`POST /chat/completions`、`GET /models`（无 key 时 401）均带 CORS 头 → 浏览器直连可行 ✅ |
+| 直连 · 未填密钥 | 设置里点发送 → 「还没填 API 密钥：点右上角 ⚙️ → 直连 → 粘贴…」✅ |
+| 直连 · 无效密钥 | 测试连接与发送均得到真实 401：界面提示「密钥无效或已过期（401）」并附上游消息（说明请求真的到达 DeepSeek）✅ |
+| 代理 · 测试连接 | 无 Key 的本地代理返回「✅ 代理可达，但服务端还没配置 DEEPSEEK_API_KEY」；GET 探活不调用模型 ✅ |
 
 未实测（如实说明）：
 
-- **真实 DeepSeek 调用**：仓库内无 API Key，真实模型输出、真实 usage 与计费未在本机跑通（填好 `.env` 后 `node server/proxy.mjs` 即可验证）。
+- **真实 DeepSeek 调用**：仓库内无有效 Key，真实模型输出、真实 usage 与计费未在本机跑通；已验证的是「请求能真正到达 DeepSeek 并正确解析 401」（直连与代理两条链路）。填入有效 Key 后即可使用。
 - **Cloudflare Worker 线上部署**：需要 Cloudflare 账号与 `wrangler login`，本机未部署；代码与本地代理同逻辑，本地已验证转发/流式/错误码路径。
