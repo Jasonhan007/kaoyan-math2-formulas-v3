@@ -359,3 +359,46 @@
   font-size: 13.5px;
   line-height: 1.6;
 }
+
+/* 齿轮（⚙️ 表情） */
+.gear {
+  font-size: 16px;
+  line-height: 1;
+  transform: translateY(-0.5px);
+}
+
+/* 设置里的「怎么填 API」帮助 */
+.cfg-help {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(10, 132, 255, 0.06);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.cfg-help summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.cfg-help ol { margin: 8px 0 0; padding-left: 1.25em; line-height: 1.7; }
+.cfg-help li { margin: 6px 0; }
+.cfg-help code {
+  background: rgba(12, 20, 36, 0.07);
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+  word-break: break-all;
+}
+.cfg-help a { color: var(--accent); text-decoration: underline; }
+.cfg-help-warn {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #b3670a;
+}
+.field-row { flex-wrap: wrap; }
+
+/* 设置按钮：让 ⚙️ 在浅色下更清晰 */
+#settingsBtn { background: rgba(12, 20, 36, 0.06); }
+#settingsBtn .gear { font-size: 17px; filter: saturate(0.92) brightness(0.9); }

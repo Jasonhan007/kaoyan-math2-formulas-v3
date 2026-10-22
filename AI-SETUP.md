@@ -1,4 +1,4 @@
-# AI 助手配置与部署说明
+﻿# AI 助手配置与部署说明
 
 本站默认是**纯静态站点**（GitHub Pages）。浏览器端不能安全保存 API Key，因此 AI 能力通过**一层极薄的代理**调用 DeepSeek：
 
@@ -17,17 +17,37 @@
 
 ## 一、本地运行
 
+### 方式 A：双击（Windows，推荐新手）
+
+1. 双击项目里的 **`start-ai.cmd`**；
+2. 第一次运行会自动生成 `.env` 并打开记事本——在里面填一行
+   `DEEPSEEK_API_KEY=sk-你的密钥`（DeepSeek 控制台创建），保存关闭；
+3. 回到黑色窗口按任意键，浏览器会自动打开 `http://127.0.0.1:8765/ai.html`。
+
+> 之所以不把密钥填在网页里：网页源码/浏览器存储是公开可读的，填进去等于泄露；密钥只放在本机 `.env`，由 `server/proxy.mjs` 读取后转发。
+
+### 方式 B：命令行
+
 ```bash
-# 1) 准备环境变量
 cp .env.example .env        # Windows: copy .env.example .env
 # 编辑 .env，填入 DEEPSEEK_API_KEY=sk-xxxx
 
-# 2) 启动（Node 18+，零依赖，同时托管静态文件与 /api/chat）
-node server/proxy.mjs
+node server/proxy.mjs       # Node 18+，零依赖，同时托管静态文件与 /api/chat
 # → http://127.0.0.1:8765/
 ```
 
-打开 `/ai.html`，默认代理地址就是同源 `/api/chat`，无需额外配置。
+### 验证是否接通
+
+打开 `/ai.html` → 右上角 **⚙️** → 点 **「测试连接」**：
+
+| 提示 | 含义 |
+|---|---|
+| ✅ 代理可达（模型 deepseek-chat） | 一切正常，可以提问 |
+| ✅ 代理可达，但服务端还没配置 DEEPSEEK_API_KEY | 代理在跑，但 `.env` 里没填密钥，填好重启 |
+| ❌ 这个地址不是 AI 代理（返回的是网页） | 地址填错，或线上还没部署 Worker |
+| ❌ 连接失败 | 地址/网络不对，或 Worker 的 ALLOWED_ORIGIN 没包含本站 |
+
+「测试连接」只发一个 `GET`，**不调用模型、不产生 token 费用**。
 
 ### 没有 Key 也能先看界面
 

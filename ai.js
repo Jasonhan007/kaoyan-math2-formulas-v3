@@ -586,6 +586,39 @@
       $("#cfgNote").textContent = "已清空答案缓存。";
     });
 
+    // 测试连接：用 GET 探活（不会调用模型，不产生 token 费用）
+    $("#testConn").addEventListener("click", async function () {
+      var url = ($("#cfgProxy").value || "").trim() || "/api/chat";
+      var note = $("#cfgNote");
+      note.textContent = "测试中… " + url;
+      try {
+        var res = await fetch(url, { method: "GET" });
+        var ct = res.headers.get("content-type") || "";
+        if (ct.indexOf("application/json") < 0) {
+          note.textContent = "❌ 这个地址不是 AI 代理（返回的是网页）。线上请填 Worker 的 /api/chat 地址。";
+          return;
+        }
+        var j = null;
+        try { j = await res.json(); } catch (e) {}
+        var code = j && j.error;
+        if (j && j.ok && j.keyConfigured === false) {
+          note.textContent = "✅ 代理可达，但服务端还没配置 DEEPSEEK_API_KEY：在 .env 或 Worker 环境变量里加上后重启即可。";
+        } else if (j && j.ok) {
+          note.textContent = "✅ 代理可达（模型 " + (j.model || "deepseek-chat") + "），可以直接发消息了。";
+        } else if (res.status === 501 || code === "NO_KEY") {
+          note.textContent = "✅ 代理可达，但服务端还没配置 DEEPSEEK_API_KEY：在 .env 或 Worker 环境变量里加上后重启即可。";
+        } else if (code === "METHOD_NOT_ALLOWED") {
+          note.textContent = "✅ 代理可达（服务端已就绪），可以直接发消息了。";
+        } else if (res.status === 403 || code === "FORBIDDEN") {
+          note.textContent = "⚠ 代理可达，但访问口令不正确：把 Worker 的 APP_TOKEN 填到上面的「访问口令」。";
+        } else {
+          note.textContent = "⚠ 代理返回 HTTP " + res.status + (code ? "（" + code + "）" : "") + "，请检查 Worker 日志。";
+        }
+      } catch (e) {
+        note.textContent = "❌ 连接失败：" + (e && e.message || e) + "。检查地址、网络，或 Worker 是否允许本站来源（ALLOWED_ORIGIN）。";
+      }
+    });
+
     // 收藏角标（沿用公式页的收藏数据）
     try {
       var favs = JSON.parse(localStorage.getItem(LS_FAV) || "[]");

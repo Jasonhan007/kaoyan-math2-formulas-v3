@@ -34,7 +34,7 @@
         </a>
       </div>
       <button class="icon-btn" id="settingsBtn" aria-label="设置">
-        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></svg>
+        <span class="gear" aria-hidden="true">⚙️</span>
       </button>
     </div>
     <nav class="topbar-row chips-row" id="modeRow" aria-label="功能选择">
@@ -109,6 +109,20 @@
       <button class="ghost-btn" id="sheetClose">关闭</button>
     </div>
     <div class="sheet-body">
+      <details class="cfg-help" open>
+        <summary>怎么填 API（30 秒看懂）</summary>
+        <ol>
+          <li><b>电脑上用</b>：把项目里的 <code>.env.example</code> 复制成 <code>.env</code>，填一行
+            <code>DEEPSEEK_API_KEY=sk-你的密钥</code>，双击 <code>start-ai.cmd</code>，
+            打开 <code>http://127.0.0.1:8765/ai.html</code> 即可（同源代理，这里不用填任何东西）。</li>
+          <li><b>手机 / 线上（GitHub Pages）</b>：网页没有后端，必须先部署一个代理（Cloudflare Worker，免费额度足够个人用），
+            再把它给你的 <code>https://xxx.workers.dev/api/chat</code> 填到下面的「代理地址」。步骤见
+            <a href="AI-SETUP.md" target="_blank" rel="noopener">AI-SETUP.md</a>。</li>
+          <li>填完点「测试连接」，看到 ✅ 就说明通了。</li>
+        </ol>
+        <p class="cfg-help-warn">密钥永远不要填在本页——本页只填代理地址。网页是公开的，填进来等于公开泄露。</p>
+      </details>
+
       <label class="field">
         <span>代理地址</span>
         <input id="cfgProxy" type="url" placeholder="留空 = 同源 /api/chat；线上填 https://你的worker.workers.dev/api/chat" autocomplete="off">
@@ -125,6 +139,7 @@
         <em>越大越贵越慢；公式讲解 600~800、解题 800~1000 足够。</em>
       </label>
       <div class="field-row">
+        <button class="ghost-btn" id="testConn">测试连接</button>
         <button class="ghost-btn" id="clearCache">清空答案缓存</button>
         <button class="ghost-btn primary" id="saveCfg">保存</button>
       </div>

@@ -133,6 +133,12 @@ function mockStream(res) {
 
 /* ---------- /api/chat ---------- */
 async function handleChat(req, res) {
+  // 探活：GET 只返回健康信息，不调用模型、不消耗额度
+  if (req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(JSON.stringify({ ok: true, keyConfigured: !!KEY, mock: MOCK, model: MODEL, hint: "POST 到此地址发消息" }));
+    return;
+  }
   if (req.method !== "POST") { res.writeHead(405, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "METHOD_NOT_ALLOWED" })); return; }
 
   let payload;

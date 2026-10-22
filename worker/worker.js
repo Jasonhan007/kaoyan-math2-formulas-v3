@@ -49,6 +49,11 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname !== "/api/chat") return json({ error: "NOT_FOUND" }, 404, cors);
+
+    // 探活：GET 只返回健康信息，不调用模型、不消耗额度
+    if (request.method === "GET") {
+      return json({ ok: true, keyConfigured: !!env.DEEPSEEK_API_KEY, model: env.DEEPSEEK_MODEL || "deepseek-chat", hint: "POST 到此地址发消息" }, 200, cors);
+    }
     if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405, cors);
 
     if (env.APP_TOKEN && request.headers.get("x-app-token") !== env.APP_TOKEN) {
